@@ -1,0 +1,10 @@
+vagtchest:
+  perm: vagt
+  staff-perm: staff.vagtchest
+  prefix: "&8&l[ &6&lVAGT &f&lKISTE &8&l] "
+  block: CHEST
+
+  GUI:
+    name: "&8&l[ &6&lVAGT &f&lKISTE &8&l]"
+
+  messages:

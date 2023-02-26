@@ -1,0 +1,11 @@
+name: VagtChest
+version: '${project.version}'
+main: dk.iskold.vagtchest.VagtChest
+api-version: 1.19
+authors: [ iskoldcool ]
+description: Selling all of the illegal items on the server
+website: mcstore.dk
+commands:
+  vagtchest:
+    aliases: [vchest]
+    description: VagtChest command.
