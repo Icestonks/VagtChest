@@ -1,9 +1,11 @@
 package dk.iskold.vagtchest.commands;
 
 import dk.iskold.vagtchest.VagtChest;
+import dk.iskold.vagtchest.tasks.GUIS;
 import dk.iskold.vagtchest.utils.Chat;
 import dk.iskold.vagtchest.utils.ChestItems;
 import dk.iskold.vagtchest.utils.ChestLocations;
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
@@ -23,17 +25,32 @@ public class VagtChestCommand implements CommandExecutor {
         String prefix = VagtChest.configYML.getString("vagtchest.prefix");
         Player player = (Player) sender;
 
-        System.out.println(player.getItemInHand());
 
         if(!player.hasPermission(staff_perm)) {
-            player.sendMessage(prefix + Chat.colored("&cDette har du ikke adgang til!"));
+            player.sendMessage(Chat.colored(prefix + Chat.colored("&cDette har du ikke adgang til!")));
             return true;
         }
 
         if(args.length == 0) {
             player.sendMessage(Chat.colored(prefix));
             player.sendMessage(Chat.colored("&8┃ &f/vchest add/remove/reload"));
-            player.sendMessage(Chat.colored("&8┃ &f/vchest items add/edit"));
+            player.sendMessage(Chat.colored("&8┃ &f/vchest items add/edit/remove"));
+            return true;
+        }
+
+        if(args[0].equalsIgnoreCase("reload")) {
+            boolean success;
+            try {
+                VagtChest.config.reloadConfig();
+                VagtChest.configYML = VagtChest.config.getConfig();
+                success = true;
+
+            } catch(Exception e){
+                e.printStackTrace();
+                success = false;
+            }
+            if(success) sender.sendMessage(Chat.colored(prefix + "&aReload successfully completed"));
+            if(!success) sender.sendMessage(Chat.colored(prefix + "&cAn error occurred. Please check the console."));
             return true;
         }
 
@@ -84,23 +101,46 @@ public class VagtChestCommand implements CommandExecutor {
 
                 if(args.length < 3 || !isInteger(args[2], 10)) {
                     player.sendMessage(Chat.colored(prefix));
-                    player.sendMessage(Chat.colored("&8┃ &f/vchest items add <tal>"));
+                    player.sendMessage(Chat.colored("&8┃ &f/vchest items add <price>"));
                     return true;
                 }
 
-                if (VagtChest.chestItems.getItems().containsKey(player.getItemInHand())) {
-                    //TODO:
-                    // - GØR SÅ AT DEN TJEKKER OM SPILLERENS ITEM ALLEREDE FINDES
+                if (ChestItems.isItemInChestItems(player.getItemInHand())) {
+                    player.sendMessage(Chat.colored(prefix + "&cDette item findes allerede!"));
+                    return true;
                 }
 
                 ChestItems.addItem(player.getItemInHand(), Integer.valueOf(args[2]));
-                player.sendMessage("Added item");
-
+                player.sendMessage(Chat.colored(prefix + "&7Du addede &8(&a" + player.getItemInHand().getType() + "&8) &7til listen af items!"));
+                return true;
             }
 
+            if (args[1].equalsIgnoreCase("remove")) {
+                if(player.getItemInHand().getType() == Material.AIR) {
+                    player.sendMessage(Chat.colored(prefix + "&cDu skal holde et item i hånden!"));
+                    return true;
+                }
+
+                if (!ChestItems.isItemInChestItems(player.getItemInHand())) {
+                    player.sendMessage(Chat.colored(prefix + "&cDette item findes ikke i listen!"));
+                    return true;
+                }
+
+                ChestItems.removeItem(player.getItemInHand());
+                player.sendMessage(Chat.colored(prefix + "&7Du fjernede &8(&c" + player.getItemInHand().getType() + "&8) &7til listen af items!"));
+                return true;
+            }
+
+            if (args[1].equalsIgnoreCase("edit")) {
+                GUIS.openEditItem(player, 0);
+                return true;
+            }
         }
 
-        return false;
+        player.sendMessage(Chat.colored(prefix));
+        player.sendMessage(Chat.colored("&8┃ &f/vchest add/remove/reload"));
+        player.sendMessage(Chat.colored("&8┃ &f/vchest items add/edit/remove"));
+        return true;
     }
 
     public static boolean isInteger(String s, int radix) {

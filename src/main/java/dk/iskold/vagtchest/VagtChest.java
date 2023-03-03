@@ -1,12 +1,18 @@
 package dk.iskold.vagtchest;
 
 import dk.iskold.vagtchest.commands.VagtChestCommand;
+import dk.iskold.vagtchest.events.BlockBreak;
 import dk.iskold.vagtchest.events.InteractListener;
+import dk.iskold.vagtchest.events.InventoryClick;
+import dk.iskold.vagtchest.events.InventoryClose;
 import dk.iskold.vagtchest.utils.ChestItems;
 import dk.iskold.vagtchest.utils.ChestLocations;
 import dk.iskold.vagtchest.utils.Config;
+import org.bukkit.Bukkit;
 import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.java.JavaPlugin;
+import net.milkbowl.vault.economy.Economy;
 
 import java.io.File;
 
@@ -18,6 +24,7 @@ public final class VagtChest extends JavaPlugin {
     public static VagtChest instance;
     public static ChestLocations chestLocations;
     public static ChestItems chestItems;
+    public static Economy econ = null;
     @Override
     public void onEnable() {
 
@@ -48,6 +55,18 @@ public final class VagtChest extends JavaPlugin {
 
         //Events
         getServer().getPluginManager().registerEvents(new InteractListener(), this);
+        getServer().getPluginManager().registerEvents(new InventoryClick(), this);
+        getServer().getPluginManager().registerEvents(new InventoryClose(), this);
+        getServer().getPluginManager().registerEvents(new BlockBreak(), this);
+
+        //VAULT // ECON
+        if (!setupEconomy() ) {
+            Bukkit.getLogger().severe(String.format("[%s] - Disabled due to no Vault dependency found!", getDescription().getName()));
+            Bukkit.getLogger().severe(String.format(String.valueOf(getServer().getPluginManager().getPlugin("Vault"))));
+            getServer().getPluginManager().disablePlugin(this);
+            return;
+        }
+        setupEconomy();
 
     }
 
@@ -59,4 +78,18 @@ public final class VagtChest extends JavaPlugin {
     public static VagtChest getInstance() {
         return instance;
     }
+
+
+    private boolean setupEconomy() {
+        if (getServer().getPluginManager().getPlugin("Vault") == null) {
+            return false;
+        }
+        RegisteredServiceProvider<Economy> rsp = getServer().getServicesManager().getRegistration(Economy.class);
+        if (rsp == null) {
+            return false;
+        }
+        econ = rsp.getProvider();
+        return econ != null;
+    }
+
 }

@@ -2,7 +2,6 @@ package dk.iskold.vagtchest.utils;
 
 import dk.iskold.vagtchest.VagtChest;
 import org.bukkit.Bukkit;
-import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.inventory.ItemStack;
@@ -10,7 +9,7 @@ import org.bukkit.inventory.ItemStack;
 import java.util.*;
 
 public class ChestItems {
-    static HashMap<ItemStack, Integer> chestItems = new HashMap<ItemStack, Integer>();
+    static LinkedHashMap<ItemStack, Integer> chestItems = new LinkedHashMap<ItemStack, Integer>();
 
     public ChestItems() {}
 
@@ -87,7 +86,7 @@ public class ChestItems {
                 int price = ((Integer) items.get("price"));
                 Material material = Material.valueOf((String) items.get("material"));
 
-                ItemStack item = new ItemStack(material, data);
+                ItemStack item = new ItemStack(material, 1, (short) data);
 
                 if (items.containsKey("enchantments")) {
                     Map<?, ?> enchantmentsMap = (Map<?, ?>) items.get("enchantments");
@@ -110,6 +109,39 @@ public class ChestItems {
         }
     }
 
+    public static boolean isItemInChestItems(ItemStack item) {
+
+        Material material = item.getType();
+        int data = 0;
+
+        if (!materialList.contains(material)) {
+            data = item.getDurability();
+        }
+
+        ItemStack new_item;
+        if(data != 0) {
+            new_item = new ItemStack(material, 1, (short) data);
+        } else {
+            new_item = new ItemStack(material, 1);
+        }
+
+        if (item.getEnchantments().size() > 0) {
+            for (Map.Entry<Enchantment, Integer> entry : item.getEnchantments().entrySet()) {
+
+                System.out.println(entry);
+                String enchantName = entry.getKey().getName();
+                int enchantLevel = (int) entry.getValue();
+                Enchantment enchant = Enchantment.getByName(enchantName);
+
+                if (enchant != null) {
+                    new_item.addUnsafeEnchantment(enchant, enchantLevel);
+                }
+            }
+        }
+
+        return chestItems.containsKey(new_item);
+    }
+
     public static void addItem(ItemStack item, Integer price) {
         List<Map<?, ?>> items = VagtChest.itemsYML.getMapList("items");
 
@@ -130,6 +162,7 @@ public class ChestItems {
             itemMap.put("data", data);
         } else {
             new_item = new ItemStack(material, 1);
+            itemMap.put("data", data);
         }
 
         if (item.getEnchantments().size() > 0) {
@@ -137,7 +170,7 @@ public class ChestItems {
             for (Map.Entry<Enchantment, Integer> entry : item.getEnchantments().entrySet()) {
                 enchantmentsMap.put(entry.getKey().getName(), entry.getValue());
 
-                String enchantName = entry.getKey().toString();
+                String enchantName = entry.getKey().getName();
                 int enchantLevel = (int) entry.getValue();
                 Enchantment enchant = Enchantment.getByName(enchantName);
                 if (enchant != null) {
@@ -149,39 +182,102 @@ public class ChestItems {
 
         chestItems.put(new_item, price);
         items.add(itemMap);
-        System.out.println(items);
         VagtChest.itemsYML.set("items", items);
         VagtChest.items.saveConfig();
     }
 
-    public static void removeLocation(Location loc) {
-
-        List<Map<?, ?>> locations = VagtChest.itemsYML.getMapList("locations");
-
+    public static void removeItem(ItemStack item) {
+        List<Map<?, ?>> items = VagtChest.itemsYML.getMapList("items");
         int indexToRemove = -1;
-        for (int i = 0; i < locations.size(); i++) {
-            Map<?, ?> locationMap = locations.get(i);
-            String worldName = (String) locationMap.get("world");
-            int x = (int) locationMap.get("x");
-            int y = (int) locationMap.get("y");
-            int z = (int) locationMap.get("z");
-            Location location = new Location(Bukkit.getWorld(worldName), x, y, z);
-            if (location.equals(loc)) {
-                chestItems.remove(location);
-                indexToRemove = i;
-                break;
+        ItemStack remove_item = null;
+
+        for (int i = 0; i < items.size(); i++) {
+            Map<?, ?> itemMap = items.get(i);
+            Material material = Material.getMaterial((String) itemMap.get("material"));
+            if(material == item.getType()) {
+                int data = (int) itemMap.get("data");
+
+                int item_data = 0;
+                if (!materialList.contains(material)) {
+                    item_data = item.getDurability();
+                }
+
+                if(data == item_data) {
+                    if(data != 0) {
+                        remove_item = new ItemStack(material, 1, (short) data);
+                    } else {
+                        remove_item = new ItemStack(material, 1);
+                    }
+
+                    boolean matchedEnchants = true;
+                    if (itemMap.containsKey("enchantments")) {
+                        Map<?, ?> enchantmentsMap = (Map<?, ?>) itemMap.get("enchantments");
+
+                        for (Map.Entry<?, ?> entry : enchantmentsMap.entrySet()) {
+                            String enchantName = entry.getKey().toString();
+                            int enchantLevel = (int) entry.getValue();
+                            Enchantment enchant = Enchantment.getByName(enchantName);
+                            if (enchant != null) {
+                                remove_item.addUnsafeEnchantment(enchant, enchantLevel);
+                                if (!item.containsEnchantment(enchant)) {
+                                    matchedEnchants = false;
+                                }
+
+                            }
+                        }
+                    }
+
+                    if(matchedEnchants) {
+                        indexToRemove = i;
+                        break;
+                    }
+
+                }
             }
         }
 
         if (indexToRemove != -1) {
-            locations.remove(indexToRemove);
-            VagtChest.itemsYML.set("locations", locations);
-            VagtChest.data.saveConfig();
+            chestItems.remove(remove_item);
+            items.remove(indexToRemove);
+            VagtChest.itemsYML.set("items", items);
+            VagtChest.items.saveConfig();
         }
     }
 
+    public static int getPrice(ItemStack item) {
+        Material material = item.getType();
+        int data = 0;
 
-    public HashMap<ItemStack, Integer> getItems() {
+        if (!materialList.contains(material)) {
+            data = item.getDurability();
+        }
+
+        ItemStack new_item;
+        if(data != 0) {
+            new_item = new ItemStack(material, 1, (short) data);
+        } else {
+            new_item = new ItemStack(material, 1);
+        }
+
+        if (item.getEnchantments().size() > 0) {
+            for (Map.Entry<Enchantment, Integer> entry : item.getEnchantments().entrySet()) {
+
+                System.out.println(entry);
+                String enchantName = entry.getKey().getName();
+                int enchantLevel = (int) entry.getValue();
+                Enchantment enchant = Enchantment.getByName(enchantName);
+
+                if (enchant != null) {
+                    new_item.addUnsafeEnchantment(enchant, enchantLevel);
+                }
+            }
+        }
+
+        return chestItems.get(new_item);
+    }
+
+
+    public LinkedHashMap<ItemStack, Integer> getItems() {
         return chestItems;
     }
 }

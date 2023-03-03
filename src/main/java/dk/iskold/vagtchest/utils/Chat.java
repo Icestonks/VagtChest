@@ -20,4 +20,9 @@ public class Chat {
         return coloredLore;
     }
 
+    public static String revertColor(String s) {
+        if(s == null) return null;
+        return s.replaceAll("§", "&");
+    }
+
 }

@@ -8,3 +8,21 @@ vagtchest:
     name: "&8&l[ &6&lVAGT &f&lKISTE &8&l]"
 
   messages:
+    sell:
+      - "&7"
+      - "&8&l[ &6&lVAGT &f&lKISTE &8&l]"
+      - "&7"
+      - "&fDu solgte for &8(&a%amount%$&8)"
+      - "&7"
+      - "&8&l[ &6&lVAGT &f&lKISTE &8&l]"
+      - "&7"
+
+
+  #
+  # ➜ Items med disse navne, kan ikke blive solgt!
+  #
+  blacklisted-items:
+    - "&a&lVAGT &f&lHELMET"
+    - "&a&lVAGT &f&lCHESTPLATE"
+    - "&a&lVAGT &f&lLEGGINGS"
+    - "&a&lVAGT &f&lBOOTS"

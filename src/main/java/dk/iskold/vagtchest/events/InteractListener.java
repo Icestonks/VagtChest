@@ -32,6 +32,15 @@ public class InteractListener implements Listener {
 
             e.setCancelled(true);
             GUIS.openVagtChest(player);
+        } else if (e.getAction() == Action.LEFT_CLICK_BLOCK) {
+            Material block = Material.valueOf(VagtChest.configYML.getString("vagtchest.block"));
+            if(e.getClickedBlock().getType() != block) { return; }
+            if(!VagtChest.chestLocations.getLocations().contains(e.getClickedBlock().getLocation())) { return; }
+
+            String staff_perm = VagtChest.configYML.getString("vagtchest.staff-perm");
+            if(player.hasPermission(staff_perm)) {
+                GUIS.openEditItem(player, 0);
+            }
         }
     }
 
